@@ -1,6 +1,5 @@
 {
   "name": "SNMP Printer Canon Enhanced",
-  "content": "integration"
   "hacs": "1.6.0",
   "homeassistant": "2023.9.0",
   "render_readme": true
