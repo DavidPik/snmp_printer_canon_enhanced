@@ -1,37 +1,23 @@
-"""SNMP Printer Canon MF754cdw sensors for Home Assistant.
+"""SNMP Printer Canon MF754cdw sensors for Home Assistant (no pysnmp).
 
-This file implements a small set of sensors tailored for Canon MF754cdw
-based on Printer-MIB OIDs.
-
-Requires: pysnmp (asyncio) or adapt to your environment's SNMP helper.
+Tento soubor vytváří senzory pro Canon MF754cdw.
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
-
-from pysnmp.hlapi.asyncio import (
-    getCmd,
-    CommunityData,
-    UdpTransportTarget,
-    ContextData,
-    ObjectType,
-    ObjectIdentity,
-)
-from pysnmp.smi.rfc1902 import Integer, OctetString
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.typing import ConfigType
-from homeassistant.const import (
-    DEVICE_CLASS_PROBLEM,
-    DEVICE_CLASS_TIMESTAMP,
-    PERCENTAGE,
-    COUNT,
-)
+from homeassistant.const import PERCENTAGE, COUNT
+
+# Pokusíme se importovat interní SNMP modul HA; pokud není, logujeme chybu.
+try:
+    from homeassistant.components import snmp  # type: ignore
+except Exception:  # pragma: no cover - runtime fallback
+    snmp = None  # type: ignore
 
 from . import const
 
@@ -41,188 +27,73 @@ SCAN_INTERVAL = 60  # seconds
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    """Set up SNMP Canon sensors from a config entry."""
+    """Nastavení entit pro Canon MF754cdw z config entry."""
     host = entry.data.get("host")
     community = entry.data.get("community", "public")
     port = entry.data.get("port", 161)
 
+    if snmp is None:
+        _LOGGER.error("SNMP helper není dostupný v tomto Home Assistantu. Zkontroluj verzi HA nebo použij jinou metodu.")
+        return
+
     entities: list[Entity] = []
 
-    # Supply sensors (toner levels)
+    # Tonery (procenta / absolutní)
     entities.append(
-        CanonSupplySensor(
-            hass,
-            entry,
-            name="Canon Toner Black",
-            oid=const.OID_TONER_BLACK,
-            color="black",
-            unit=PERCENTAGE,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonSupplySensor(hass, entry, "Canon Toner Black", const.OID_TONER_BLACK, color="black", unit=PERCENTAGE, host=host, community=community, port=port)
     )
     entities.append(
-        CanonSupplySensor(
-            hass,
-            entry,
-            name="Canon Toner Cyan",
-            oid=const.OID_TONER_CYAN,
-            color="cyan",
-            unit=PERCENTAGE,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonSupplySensor(hass, entry, "Canon Toner Cyan", const.OID_TONER_CYAN, color="cyan", unit=PERCENTAGE, host=host, community=community, port=port)
     )
     entities.append(
-        CanonSupplySensor(
-            hass,
-            entry,
-            name="Canon Toner Magenta",
-            oid=const.OID_TONER_MAGENTA,
-            color="magenta",
-            unit=PERCENTAGE,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonSupplySensor(hass, entry, "Canon Toner Magenta", const.OID_TONER_MAGENTA, color="magenta", unit=PERCENTAGE, host=host, community=community, port=port)
     )
     entities.append(
-        CanonSupplySensor(
-            hass,
-            entry,
-            name="Canon Toner Yellow",
-            oid=const.OID_TONER_YELLOW,
-            color="yellow",
-            unit=PERCENTAGE,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonSupplySensor(hass, entry, "Canon Toner Yellow", const.OID_TONER_YELLOW, color="yellow", unit=PERCENTAGE, host=host, community=community, port=port)
     )
 
-    # Toner max capacities (optional, used to compute percent if device returns absolute values)
+    # Max kapacity tonerů (počet stran)
     entities.append(
-        CanonNumericSensor(
-            hass,
-            entry,
-            name="Canon Toner Black Max",
-            oid=const.OID_TONER_BLACK_MAX,
-            unit="pages",
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonNumericSensor(hass, entry, "Canon Toner Black Max", const.OID_TONER_BLACK_MAX, unit="pages", host=host, community=community, port=port)
     )
     entities.append(
-        CanonNumericSensor(
-            hass,
-            entry,
-            name="Canon Toner Cyan Max",
-            oid=const.OID_TONER_CYAN_MAX,
-            unit="pages",
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonNumericSensor(hass, entry, "Canon Toner Cyan Max", const.OID_TONER_CYAN_MAX, unit="pages", host=host, community=community, port=port)
     )
     entities.append(
-        CanonNumericSensor(
-            hass,
-            entry,
-            name="Canon Toner Magenta Max",
-            oid=const.OID_TONER_MAGENTA_MAX,
-            unit="pages",
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonNumericSensor(hass, entry, "Canon Toner Magenta Max", const.OID_TONER_MAGENTA_MAX, unit="pages", host=host, community=community, port=port)
     )
     entities.append(
-        CanonNumericSensor(
-            hass,
-            entry,
-            name="Canon Toner Yellow Max",
-            oid=const.OID_TONER_YELLOW_MAX,
-            unit="pages",
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonNumericSensor(hass, entry, "Canon Toner Yellow Max", const.OID_TONER_YELLOW_MAX, unit="pages", host=host, community=community, port=port)
     )
 
-    # Waste toner (some devices return percent or absolute)
+    # Waste toner
     entities.append(
-        CanonSupplySensor(
-            hass,
-            entry,
-            name="Canon Waste Toner",
-            oid=const.OID_WASTE_TONER,
-            color="grey",
-            unit=PERCENTAGE,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonSupplySensor(hass, entry, "Canon Waste Toner", const.OID_WASTE_TONER, color="grey", unit=PERCENTAGE, host=host, community=community, port=port)
     )
 
     # Page counter
     entities.append(
-        CanonNumericSensor(
-            hass,
-            entry,
-            name="Canon Page Count",
-            oid=const.OID_PAGE_COUNT,
-            unit=COUNT,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonNumericSensor(hass, entry, "Canon Page Count", const.OID_PAGE_COUNT, unit=COUNT, host=host, community=community, port=port)
     )
 
     # Device status
     entities.append(
-        CanonStatusSensor(
-            hass,
-            entry,
-            name="Canon Device Status",
-            oid=const.OID_DEVICE_STATUS,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonStatusSensor(hass, entry, "Canon Device Status", const.OID_DEVICE_STATUS, host=host, community=community, port=port)
     )
 
     # Tray statuses
     entities.append(
-        CanonTraySensor(
-            hass,
-            entry,
-            name="Canon Multi Purpose Tray Status",
-            oid=const.OID_TRAY_MP,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonTraySensor(hass, entry, "Canon Multi Purpose Tray Status", const.OID_TRAY_MP, host=host, community=community, port=port)
     )
     entities.append(
-        CanonTraySensor(
-            hass,
-            entry,
-            name="Canon Tray 1 Status",
-            oid=const.OID_TRAY_1,
-            host=host,
-            community=community,
-            port=port,
-        )
+        CanonTraySensor(hass, entry, "Canon Tray 1 Status", const.OID_TRAY_1, host=host, community=community, port=port)
     )
 
     async_add_entities(entities, update_before_add=True)
 
 
 class BaseSNMPSensor(Entity):
-    """Base SNMP sensor."""
+    """Základní SNMP senzor používající interní HA SNMP helper."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, name: str, oid: str, host: str, community: str, port: int):
         self.hass = hass
@@ -232,7 +103,7 @@ class BaseSNMPSensor(Entity):
         self._host = host
         self._community = community
         self._port = port
-        self._state = None
+        self._state: Any = None
         self._attributes: dict[str, Any] = {}
         self._available = True
 
@@ -249,47 +120,53 @@ class BaseSNMPSensor(Entity):
         return self._attributes
 
     async def async_update(self) -> None:
-        """Fetch new state via SNMP GET."""
+        """Načti hodnotu přes interní SNMP helper a zpracuj ji."""
         try:
             value = await self._snmp_get(self._oid)
             self._process_value(value)
             self._available = True
         except Exception as exc:  # pylint: disable=broad-except
-            _LOGGER.debug("SNMP GET failed for %s (%s): %s", self._name, self._oid, exc)
+            _LOGGER.debug("SNMP GET selhalo pro %s (%s): %s", self._name, self._oid, exc)
             self._available = False
 
-    async def _snmp_get(self, oid: str):
-        """Perform SNMP GET and return raw value."""
-        # Build SNMP GET
-        target = UdpTransportTarget((self._host, self._port), timeout=2, retries=1)
-        community = CommunityData(self._community, mpModel=1)  # SNMPv2c
-        obj = ObjectType(ObjectIdentity(oid))
+    async def _snmp_get(self, oid: str) -> Any:
+        """Volání interního SNMP helperu Home Assistantu.
 
-        # Execute async getCmd
-        iterator = getCmd(community, target, ContextData(), obj)
-        error_indication, error_status, error_index, var_binds = await iterator
-        if error_indication:
-            raise RuntimeError(f"SNMP error: {error_indication}")
-        if error_status:
-            raise RuntimeError(f"SNMP error status: {error_status.prettyPrint()} at {error_index}")
-        # var_binds is a list of (ObjectIdentity, value)
-        for _, val in var_binds:
-            # Convert pysnmp types to python native
-            if isinstance(val, (Integer,)):
-                return int(val)
-            if isinstance(val, (OctetString,)):
-                return str(val.prettyPrint())
-            # fallback
-            return val.prettyPrint()
-        raise RuntimeError("No SNMP value returned")
+        Očekává se, že modul `homeassistant.components.snmp` poskytuje
+        asynchronní funkci `async_get(hass, host, community, oid, port=161)`.
+        Pokud má tvá verze HA jinou signaturu, uprav volání zde.
+        """
+        if snmp is None:
+            raise RuntimeError("SNMP helper není dostupný v HA runtime")
+
+        # Pokusíme se zavolat běžné wrappery; pokud signatura neodpovídá,
+        # zachytíme chybu a vyhodíme srozumitelnou výjimku.
+        try:
+            # běžné volání: snmp.async_get(hass, host, community, oid, port=161)
+            result = await snmp.async_get(self.hass, self._host, self._community, oid, port=self._port)
+            # result může být dict nebo primitivní typ; normalizujeme
+            if isinstance(result, dict) and "value" in result:
+                return result["value"]
+            return result
+        except AttributeError:
+            # fallback: některé verze mají snmp.async_get(hass, host, oid, community)
+            try:
+                result = await snmp.async_get(self.hass, self._host, oid, self._community)
+                if isinstance(result, dict) and "value" in result:
+                    return result["value"]
+                return result
+            except Exception as exc:
+                raise RuntimeError(f"SNMP helper volání selhalo: {exc}") from exc
+        except Exception as exc:
+            raise RuntimeError(f"SNMP GET error: {exc}") from exc
 
     def _process_value(self, value: Any) -> None:
-        """Process raw SNMP value into sensor state. Override in subclasses."""
+        """Základní zpracování hodnoty; přepsat v podtřídách."""
         self._state = value
 
 
 class CanonNumericSensor(BaseSNMPSensor):
-    """Numeric sensor for counts and capacities."""
+    """Číselný senzor pro počítadla a kapacity."""
 
     def __init__(self, hass, entry, name, oid, unit=None, host=None, community=None, port=161):
         super().__init__(hass, entry, name, oid, host, community, port)
@@ -307,11 +184,12 @@ class CanonNumericSensor(BaseSNMPSensor):
         try:
             self._state = int(value)
         except Exception:
+            # pokud nelze převést, ponecháme původní hodnotu (text)
             self._state = value
 
 
 class CanonSupplySensor(BaseSNMPSensor):
-    """Supply sensor for toners and waste."""
+    """Senzor pro tonery a waste toner."""
 
     def __init__(self, hass, entry, name, oid, color=None, unit=None, host=None, community=None, port=161):
         super().__init__(hass, entry, name, oid, host, community, port)
@@ -328,7 +206,6 @@ class CanonSupplySensor(BaseSNMPSensor):
 
     @property
     def icon(self):
-        # simple icon mapping
         if self._color == "cyan":
             return "mdi:water"
         if self._color == "magenta":
@@ -340,33 +217,36 @@ class CanonSupplySensor(BaseSNMPSensor):
         return "mdi:printer"
 
     def _process_value(self, value: Any) -> None:
-        # Canon often returns percentage directly; sometimes absolute value
+        """Zpracování hodnoty toneru. Canon může vracet procenta, 0-255 nebo absolutní hodnoty."""
         try:
             val = int(value)
-            # clamp
-            if val < 0:
-                val = 0
-            if val > 10000 and val > 100:  # heuristic: if very large, treat as pages
-                # leave as-is (pages)
-                self._state = val
-                self._attributes["value_type"] = "absolute"
-            else:
-                # treat as percent
-                if val > 100:
-                    # some devices return 0-255 scale; normalize to 0-100
-                    if val <= 255:
-                        val = round(val / 255 * 100)
+            # heuristika: pokud je hodnota v rozsahu 0-100, bereme jako procento
+            if 0 <= val <= 100:
                 self._state = val
                 self._attributes["value_type"] = "percent"
+                return
+
+            # pokud je v rozsahu 0-255, normalizujeme na 0-100
+            if 0 <= val <= 255:
+                self._state = round(val / 255 * 100)
+                self._attributes["value_type"] = "normalized_0_255"
+                return
+
+            # pokud je větší než 100 a v řádu stovek/tisíců, může jít o počet stran (absolute)
+            if val > 100:
+                self._state = val
+                self._attributes["value_type"] = "absolute"
+                return
+
+            # fallback
+            self._state = val
         except Exception:
+            # textové nebo jiné hodnoty
             self._state = value
 
 
 class CanonStatusSensor(BaseSNMPSensor):
-    """Device status sensor."""
-
-    def __init__(self, hass, entry, name, oid, host=None, community=None, port=161):
-        super().__init__(hass, entry, name, oid, host, community, port)
+    """Senzor stavu zařízení (Printer-MIB / hrDeviceStatus)."""
 
     @property
     def icon(self):
@@ -374,12 +254,12 @@ class CanonStatusSensor(BaseSNMPSensor):
 
     @property
     def state(self):
-        # map common Printer-MIB states
         if self._state is None:
             return None
         try:
             s = int(self._state)
-            # typical mapping: 1=other,2=unknown,3=idle,4=printing,5=warmup (varies)
+            # mapování podle běžných hodnot (může se lišit podle zařízení)
+            # 1=other, 2=unknown, 3=idle, 4=printing, 5=warmup
             if s == 3:
                 return "idle"
             if s == 4:
@@ -394,10 +274,7 @@ class CanonStatusSensor(BaseSNMPSensor):
 
 
 class CanonTraySensor(BaseSNMPSensor):
-    """Tray status sensor."""
-
-    def __init__(self, hass, entry, name, oid, host=None, community=None, port=161):
-        super().__init__(hass, entry, name, oid, host, community, port)
+    """Senzor stavu zásobníku."""
 
     @property
     def icon(self):
@@ -405,13 +282,12 @@ class CanonTraySensor(BaseSNMPSensor):
 
     @property
     def state(self):
-        # Canon may return textual status or numeric code
         if self._state is None:
             return None
         try:
             val = int(self._state)
-            # map common codes (device dependent)
-            # 1 = other, 2 = unknown, 3 = available, 4 = not available, 5 = jammed
+            # běžné mapování (zařízení se liší)
+            # 1=other,2=unknown,3=available,4=not available,5=jammed
             if val == 3:
                 return "available"
             if val == 4:
