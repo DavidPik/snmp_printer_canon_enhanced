@@ -3,133 +3,133 @@
     "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "SNMP Printer Setup",
-        "description": "Configure your SNMP-enabled printer"
+        "title": "Nastavení SNMP tiskárny",
+        "description": "Nastavte vaší SNMP tiskárnu"
       },
       "zeroconf_confirm": {
-        "title": "Discovered SNMP Printer",
-        "description": "Do you want to add this printer?\n\n**Model:** {model}\n**Manufacturer:** {manufacturer}\n**IP Address:** {host}"
+        "title": "Nalezená SNMP Tiskárna",
+        "description": "Chcete přidat tuto tiskárnu?\n\n**Model:** {model}\n**Výrobce:** {manufacturer}\n**IP Adresa:** {host}"
       },
       "manual": {
-        "title": "Configure SNMP Printer",
-        "description": "Enter details for your SNMP-enabled printer",
+        "title": "Nastavte SNMP Tiskárnu",
+        "description": "Vložte detaily vaší SNMP tiskárny",
         "data": {
-          "host": "IP Address",
+          "host": "IP Adresa",
           "port": "Port",
-          "snmp_version": "SNMP Version",
-          "community": "Community String",
-          "username": "Username",
-          "auth_protocol": "Authentication Protocol",
-          "auth_key": "Authentication Key",
-          "priv_protocol": "Privacy Protocol",
-          "priv_key": "Privacy Key",
-          "update_interval": "Update Interval (seconds)"
+          "snmp_version": "Verze SNMP",
+          "community": "Název komunity",
+          "username": "Uživatelské jméno",
+          "auth_protocol": "Autentizační protokol",
+          "auth_key": "Autentizační klíč",
+          "priv_protocol": "Šifrovací protokol",
+          "priv_key": "Šifrovací klíč",
+          "update_interval": "Interval obnovy (sekund)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the printer. Check your settings and ensure SNMP is enabled.",
-      "unknown": "Unexpected error occurred"
+      "cannot_connect": "Selhalo připojení k tiskárně. Zkontrolujte svoje nastavení a povolení SNMP v tiskárně.",
+      "unknown": "Nastala neočekávaná chyba"
     },
     "abort": {
-      "already_configured": "This printer is already configured",
-      "not_printer": "The discovered device is not an SNMP-enabled printer"
+      "already_configured": "Tato tiskárna je již nastavená",
+      "not_printer": "Nalezené zařízení není SNMP tiskárna"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Update SNMP Printer Settings",
-        "description": "Update the configuration for this printer",
+        "title": "Změna nastavení SNMP tiskárny",
+        "description": "Změňte nastavení této SNMP tiskárny",
         "data": {
-          "community": "Community String",
-          "username": "Username",
-          "auth_protocol": "Authentication Protocol",
-          "auth_key": "Authentication Key",
-          "priv_protocol": "Privacy Protocol",
-          "priv_key": "Privacy Key",
-          "update_interval": "Update Interval (seconds)"
+          "community": "Název komunity",
+          "username": "Uživatelské jméno",
+          "auth_protocol": "Autentizační protokol",
+          "auth_key": "Autentizační klíč",
+          "priv_protocol": "Šifrovací protokol",
+          "priv_key": "Šifrovací klíč",
+          "update_interval": "Interval obnovy (sekund)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect with the new settings. Check your configuration."
+      "cannot_connect": "Selhalo připojení k tiskárně. Zkontrolujte svoje změny v nastavení."
     }
   },
   "entity": {
     "sensor": {
       "status": {
-        "name": "Status",
+        "name": "Stav",
         "state": {
-          "idle": "Idle",
-          "printing": "Printing",
-          "warming_up": "Warming up",
-          "offline": "Offline (cached data)",
-          "unknown": "Unknown"
+          "idle": "V klidu",
+          "printing": "Tiskne",
+          "warming_up": "Nahřívá se",
+          "offline": "Odpojená (zapamatované informace)",
+          "unknown": "Neznámý"
         }
       },
       "page_count": {
-        "name": "Page count"
+        "name": "Počet stran"
       },
       "cover_status": {
-        "name": "Cover status"
+        "name": "Stav víka"
       },
       "errors": {
-        "name": "Errors"
+        "name": "Chyby"
       },
       "display": {
-        "name": "Display"
+        "name": "Displej"
       },
       "black": {
-        "name": "Black"
+        "name": "Černá"
       },
       "cyan": {
-        "name": "Cyan"
+        "name": "Azurová"
       },
       "magenta": {
-        "name": "Magenta"
+        "name": "Purpurová"
       },
       "yellow": {
-        "name": "Yellow"
+        "name": "Žlutá"
       },
       "light_cyan": {
-        "name": "Light cyan"
+        "name": "Světlá azurová"
       },
       "light_magenta": {
-        "name": "Light magenta"
+        "name": "Světlá purpurová"
       },
       "photo": {
-        "name": "Photo"
+        "name": "Foto"
       },
       "gray": {
-        "name": "Gray"
+        "name": "Šedá"
       },
       "tray_1": {
-        "name": "Tray 1"
+        "name": "Zásobník 1"
       },
       "tray_2": {
-        "name": "Tray 2"
+        "name": "Zásobník 2"
       },
       "tray_3": {
-        "name": "Tray 3"
+        "name": "Zásobník 3"
       },
       "tray_4": {
-        "name": "Tray 4"
+        "name": "Zásobník 4"
       }
     }
   },
   "services": {
     "display_text": {
-      "name": "Display Text",
-      "description": "Display text on the printer's screen (if supported)",
+      "name": "Zobrazit text",
+      "description": "Zobrazí text na displeji tiskárny (pokud to podporuje)",
       "fields": {
         "device_id": {
-          "name": "Device",
-          "description": "The printer device"
+          "name": "Zařízení",
+          "description": "Vybraná tiskárna"
         },
         "text": {
           "name": "Text",
-          "description": "Text to display on the printer"
+          "description": "Text ke zobrazení na tiskárně"
         }
       }
     }
