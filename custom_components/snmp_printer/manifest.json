@@ -1,6 +1,6 @@
 {
-  "domain": "snmp_printer",
-  "name": "SNMP Printer",
+  "domain": "snmp_printer_canon_enhanced",
+  "name": "SNMP Printer Canon Enhanced",
   "codeowners": ["@dsorlov"],
   "config_flow": true,
   "dependencies": [],
