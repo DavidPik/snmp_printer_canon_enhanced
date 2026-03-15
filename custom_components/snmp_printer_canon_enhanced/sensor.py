@@ -1,595 +1,423 @@
-"""Support for SNMP Printer sensors."""
+"""SNMP Printer Canon MF754cdw sensors for Home Assistant.
+
+This file implements a small set of sensors tailored for Canon MF754cdw
+based on Printer-MIB OIDs.
+
+Requires: pysnmp (asyncio) or adapt to your environment's SNMP helper.
+"""
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from datetime import datetime
 from typing import Any
 
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorEntity,
-    SensorStateClass,
+from pysnmp.hlapi.asyncio import (
+    getCmd,
+    CommunityData,
+    UdpTransportTarget,
+    ContextData,
+    ObjectType,
+    ObjectIdentity,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_HOST, PERCENTAGE, UnitOfTime
+from pysnmp.smi.rfc1902 import Integer, OctetString
+
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo, EntityCategory
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.const import (
+    DEVICE_CLASS_PROBLEM,
+    DEVICE_CLASS_TIMESTAMP,
+    PERCENTAGE,
+    COUNT,
 )
 
-from .const import DOMAIN
+from . import const
 
 _LOGGER = logging.getLogger(__name__)
 
-
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up SNMP Printer sensors based on a config entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-
-    entities = []
-
-    # Add main status sensor
-    entities.append(PrinterStatusSensor(coordinator, entry))
-
-    # Add cover status sensor
-    entities.append(PrinterCoverStatusSensor(coordinator, entry))
-
-    # Add page count sensor
-    entities.append(PrinterPageCountSensor(coordinator, entry))
-
-    # Add error sensor
-    entities.append(PrinterErrorSensor(coordinator, entry))
-
-    # Add display text sensor
-    entities.append(PrinterDisplayTextSensor(coordinator, entry))
-
-    # Add supply sensors (toner, ink, drums, etc.)
-    if coordinator.data and "supplies" in coordinator.data:
-        for supply in coordinator.data["supplies"]:
-            entities.append(PrinterSupplySensor(coordinator, entry, supply))
-
-    # Add tray sensors
-    if coordinator.data and "input_trays" in coordinator.data:
-        for tray in coordinator.data["input_trays"]:
-            entities.append(PrinterTraySensor(coordinator, entry, tray))
-
-    async_add_entities(entities, True)
+SCAN_INTERVAL = 60  # seconds
 
 
-class PrinterSensorBase(CoordinatorEntity, SensorEntity):
-    """Base class for printer sensors."""
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
+    """Set up SNMP Canon sensors from a config entry."""
+    host = entry.data.get("host")
+    community = entry.data.get("community", "public")
+    port = entry.data.get("port", 161)
 
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
+    entities: list[Entity] = []
+
+    # Supply sensors (toner levels)
+    entities.append(
+        CanonSupplySensor(
+            hass,
+            entry,
+            name="Canon Toner Black",
+            oid=const.OID_TONER_BLACK,
+            color="black",
+            unit=PERCENTAGE,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonSupplySensor(
+            hass,
+            entry,
+            name="Canon Toner Cyan",
+            oid=const.OID_TONER_CYAN,
+            color="cyan",
+            unit=PERCENTAGE,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonSupplySensor(
+            hass,
+            entry,
+            name="Canon Toner Magenta",
+            oid=const.OID_TONER_MAGENTA,
+            color="magenta",
+            unit=PERCENTAGE,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonSupplySensor(
+            hass,
+            entry,
+            name="Canon Toner Yellow",
+            oid=const.OID_TONER_YELLOW,
+            color="yellow",
+            unit=PERCENTAGE,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+
+    # Toner max capacities (optional, used to compute percent if device returns absolute values)
+    entities.append(
+        CanonNumericSensor(
+            hass,
+            entry,
+            name="Canon Toner Black Max",
+            oid=const.OID_TONER_BLACK_MAX,
+            unit="pages",
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonNumericSensor(
+            hass,
+            entry,
+            name="Canon Toner Cyan Max",
+            oid=const.OID_TONER_CYAN_MAX,
+            unit="pages",
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonNumericSensor(
+            hass,
+            entry,
+            name="Canon Toner Magenta Max",
+            oid=const.OID_TONER_MAGENTA_MAX,
+            unit="pages",
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonNumericSensor(
+            hass,
+            entry,
+            name="Canon Toner Yellow Max",
+            oid=const.OID_TONER_YELLOW_MAX,
+            unit="pages",
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+
+    # Waste toner (some devices return percent or absolute)
+    entities.append(
+        CanonSupplySensor(
+            hass,
+            entry,
+            name="Canon Waste Toner",
+            oid=const.OID_WASTE_TONER,
+            color="grey",
+            unit=PERCENTAGE,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+
+    # Page counter
+    entities.append(
+        CanonNumericSensor(
+            hass,
+            entry,
+            name="Canon Page Count",
+            oid=const.OID_PAGE_COUNT,
+            unit=COUNT,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+
+    # Device status
+    entities.append(
+        CanonStatusSensor(
+            hass,
+            entry,
+            name="Canon Device Status",
+            oid=const.OID_DEVICE_STATUS,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+
+    # Tray statuses
+    entities.append(
+        CanonTraySensor(
+            hass,
+            entry,
+            name="Canon Multi Purpose Tray Status",
+            oid=const.OID_TRAY_MP,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+    entities.append(
+        CanonTraySensor(
+            hass,
+            entry,
+            name="Canon Tray 1 Status",
+            oid=const.OID_TRAY_1,
+            host=host,
+            community=community,
+            port=port,
+        )
+    )
+
+    async_add_entities(entities, update_before_add=True)
+
+
+class BaseSNMPSensor(Entity):
+    """Base SNMP sensor."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, name: str, oid: str, host: str, community: str, port: int):
+        self.hass = hass
         self._entry = entry
-        self._attr_has_entity_name = True
+        self._name = name
+        self._oid = oid
+        self._host = host
+        self._community = community
+        self._port = port
+        self._state = None
+        self._attributes: dict[str, Any] = {}
+        self._available = True
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def available(self) -> bool:
-        """Return if entity is available."""
-        # Entity is available if we have data (either live or cached)
-        return self.coordinator.data is not None
+        return self._available
 
     @property
-    def is_printer_online(self) -> bool:
-        """Check if printer is currently online."""
-        if not self.coordinator.data:
-            return False
-        return self.coordinator.data.get("is_online", True)
+    def extra_state_attributes(self) -> dict:
+        return self._attributes
+
+    async def async_update(self) -> None:
+        """Fetch new state via SNMP GET."""
+        try:
+            value = await self._snmp_get(self._oid)
+            self._process_value(value)
+            self._available = True
+        except Exception as exc:  # pylint: disable=broad-except
+            _LOGGER.debug("SNMP GET failed for %s (%s): %s", self._name, self._oid, exc)
+            self._available = False
+
+    async def _snmp_get(self, oid: str):
+        """Perform SNMP GET and return raw value."""
+        # Build SNMP GET
+        target = UdpTransportTarget((self._host, self._port), timeout=2, retries=1)
+        community = CommunityData(self._community, mpModel=1)  # SNMPv2c
+        obj = ObjectType(ObjectIdentity(oid))
+
+        # Execute async getCmd
+        iterator = getCmd(community, target, ContextData(), obj)
+        error_indication, error_status, error_index, var_binds = await iterator
+        if error_indication:
+            raise RuntimeError(f"SNMP error: {error_indication}")
+        if error_status:
+            raise RuntimeError(f"SNMP error status: {error_status.prettyPrint()} at {error_index}")
+        # var_binds is a list of (ObjectIdentity, value)
+        for _, val in var_binds:
+            # Convert pysnmp types to python native
+            if isinstance(val, (Integer,)):
+                return int(val)
+            if isinstance(val, (OctetString,)):
+                return str(val.prettyPrint())
+            # fallback
+            return val.prettyPrint()
+        raise RuntimeError("No SNMP value returned")
+
+    def _process_value(self, value: Any) -> None:
+        """Process raw SNMP value into sensor state. Override in subclasses."""
+        self._state = value
+
+
+class CanonNumericSensor(BaseSNMPSensor):
+    """Numeric sensor for counts and capacities."""
+
+    def __init__(self, hass, entry, name, oid, unit=None, host=None, community=None, port=161):
+        super().__init__(hass, entry, name, oid, host, community, port)
+        self._unit = unit
 
     @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        data = self.coordinator.data
-        info = data.get("info", {}) if data else {}
-        status = data.get("status", {}) if data else {}
-
-        # Extract manufacturer and model from description
-        description = info.get("description", "")
-        location = info.get("location", "")
-
-        # Try to get model name from description PID field
-        model = "Unknown Printer"
-        if "PID:" in description:
-            parts = description.split("PID:")
-            if len(parts) > 1:
-                model = parts[1].split(",")[0].split(";")[0].strip()
-        elif location:
-            model = location
-
-        # Extract manufacturer
-        manufacturer = "Unknown"
-        if "HP" in description or "Hewlett-Packard" in description:
-            manufacturer = "HP"
-        elif "Canon" in description:
-            manufacturer = "Canon"
-        elif "Epson" in description:
-            manufacturer = "Epson"
-        elif "Brother" in description:
-            manufacturer = "Brother"
-        elif "Lexmark" in description:
-            manufacturer = "Lexmark"
-        elif "Samsung" in description:
-            manufacturer = "Samsung"
-        elif "Xerox" in description:
-            manufacturer = "Xerox"
-
-        # Use serial number or host as unique ID
-        unique_id = info.get("serial_number", self._entry.data[CONF_HOST])
-
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, unique_id)},
-            name=model if model != "Unknown Printer" else self._entry.data[CONF_HOST],
-            manufacturer=manufacturer,
-            model=model,
-        )
-
-        # Add configuration URL if web interface is available
-        if data and data.get("web_interface_available"):
-            device_info["configuration_url"] = f"http://{self._entry.data[CONF_HOST]}"
-
-        if info.get("serial_number"):
-            device_info["serial_number"] = info["serial_number"]
-
-        return device_info
-
-
-class PrinterStatusSensor(PrinterSensorBase):
-    """Representation of a printer status sensor."""
-
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._attr_translation_key = "status"
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_status"
-        self._attr_icon = "mdi:printer"
-        self._attr_device_class = SensorDeviceClass.ENUM
-        self._attr_options = ["idle", "printing", "warming_up", "online", "offline", "unknown"]
+    def state(self):
+        return self._state
 
     @property
-    def native_value(self) -> str:
-        """Return the state of the sensor."""
-        if not self.coordinator.data:
-            return "unknown"
+    def unit_of_measurement(self):
+        return self._unit
 
-        # If printer is offline, return offline status
-        if not self.is_printer_online:
-            return "offline"
-
-        status = self.coordinator.data.get("status", {})
-        return status.get("state", "unknown")
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        if not self.coordinator.data:
-            return {}
-
-        info = self.coordinator.data.get("info", {})
-        status = self.coordinator.data.get("status", {})
-
-        attributes = {
-            "uptime": info.get("uptime"),
-            "contact": info.get("contact"),
-            "location": info.get("location"),
-            "serial_number": info.get("serial_number"),
-            "description": info.get("description"),
-        }
-
-        # Add offline information if using cached data
-        if not self.is_printer_online:
-            attributes["using_cached_data"] = True
-            offline_since = self.coordinator.data.get("offline_since")
-            if offline_since:
-                attributes["offline_since"] = offline_since
-
-        # Remove None values
-        return {k: v for k, v in attributes.items() if v is not None}
+    def _process_value(self, value: Any) -> None:
+        try:
+            self._state = int(value)
+        except Exception:
+            self._state = value
 
 
-class PrinterCoverStatusSensor(PrinterSensorBase):
-    """Representation of a printer cover status sensor."""
+class CanonSupplySensor(BaseSNMPSensor):
+    """Supply sensor for toners and waste."""
 
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._attr_translation_key = "cover_status"
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_cover_status"
-        self._attr_icon = "mdi:printer-3d-nozzle-alert"
+    def __init__(self, hass, entry, name, oid, color=None, unit=None, host=None, community=None, port=161):
+        super().__init__(hass, entry, name, oid, host, community, port)
+        self._color = color
+        self._unit = unit or PERCENTAGE
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added."""
-        # Disable by default if no cover data or state is unknown
-        if not self.coordinator.data:
-            return False
-        cover_status = self.coordinator.data.get("cover_status", {})
-        state = cover_status.get("state", "unknown")
-        # Enable only if we have a valid state (not unknown)
-        return state != "unknown" and state != ""
+    def state(self):
+        return self._state
 
     @property
-    def native_value(self) -> str:
-        """Return the state of the sensor."""
-        if not self.coordinator.data:
-            return "unknown"
-
-        cover_status = self.coordinator.data.get("cover_status", {})
-        return cover_status.get("state", "unknown")
-
-
-class PrinterPageCountSensor(PrinterSensorBase):
-    """Representation of a printer page count sensor."""
-
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._attr_translation_key = "page_count"
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_page_count"
-        self._attr_icon = "mdi:counter"
-        self._attr_native_unit_of_measurement = "pages"
+    def unit_of_measurement(self):
+        return self._unit
 
     @property
-    def native_value(self) -> int | None:
-        """Return the state of the sensor."""
-        if not self.coordinator.data:
-            return None
+    def icon(self):
+        # simple icon mapping
+        if self._color == "cyan":
+            return "mdi:water"
+        if self._color == "magenta":
+            return "mdi:flower"
+        if self._color == "yellow":
+            return "mdi:brightness-5"
+        if self._color == "black":
+            return "mdi:circle"
+        return "mdi:printer"
 
-        page_count = self.coordinator.data.get("page_count", {})
-        return page_count.get("total")
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        if not self.coordinator.data:
-            return {}
-
-        page_count = self.coordinator.data.get("page_count", {})
-        attrs = {}
-
-        if page_count.get("color") is not None:
-            attrs["color_pages"] = page_count.get("color")
-
-        if page_count.get("black_and_white") is not None:
-            attrs["black_and_white_pages"] = page_count.get("black_and_white")
-
-        # Add offline information if using cached data
-        if not self.is_printer_online:
-            attrs["using_cached_data"] = True
-            offline_since = self.coordinator.data.get("offline_since")
-            if offline_since:
-                attrs["last_updated"] = offline_since
-
-        return attrs
-
-
-class PrinterSupplySensor(PrinterSensorBase):
-    """Representation of a printer supply sensor."""
-
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-        supply: dict[str, Any],
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._supply = supply
-
-        # Set translation key based on color (lowercase with underscores)
-        color = supply.get("color", "")
-        if color and color != "Unknown":
-            color_key = color.lower().replace(" ", "_")
-            self._attr_translation_key = color_key
-        else:
-            # Fallback to description for non-standard supplies
-            self._attr_name = supply.get("description", "Supply")
-
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_supply_{supply.get('index')}"
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-
-        # Set icon based on color - use droplets for all ink/toner
-        if color in [
-            "Black",
-            "Cyan",
-            "Magenta",
-            "Yellow",
-            "Gray",
-            "Grey",
-            "Light Cyan",
-            "Light Magenta",
-            "Photo",
-        ]:
-            self._attr_icon = "mdi:water"
-        else:
-            # For unknown colors, check supply type
-            supply_type = supply.get("type", "").lower()
-            if "toner" in supply_type or "ink" in supply_type:
-                self._attr_icon = "mdi:water"
-            elif "drum" in supply_type or "image" in supply_type:
-                self._attr_icon = "mdi:circle-outline"
+    def _process_value(self, value: Any) -> None:
+        # Canon often returns percentage directly; sometimes absolute value
+        try:
+            val = int(value)
+            # clamp
+            if val < 0:
+                val = 0
+            if val > 10000 and val > 100:  # heuristic: if very large, treat as pages
+                # leave as-is (pages)
+                self._state = val
+                self._attributes["value_type"] = "absolute"
             else:
-                self._attr_icon = "mdi:package-variant"
+                # treat as percent
+                if val > 100:
+                    # some devices return 0-255 scale; normalize to 0-100
+                    if val <= 255:
+                        val = round(val / 255 * 100)
+                self._state = val
+                self._attributes["value_type"] = "percent"
+        except Exception:
+            self._state = value
+
+
+class CanonStatusSensor(BaseSNMPSensor):
+    """Device status sensor."""
+
+    def __init__(self, hass, entry, name, oid, host=None, community=None, port=161):
+        super().__init__(hass, entry, name, oid, host, community, port)
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added."""
-        # Always enable supply sensors, even if percentage is not available
-        # This ensures pirated/third-party cartridges that don't report levels are still visible
-        return True
+    def icon(self):
+        return "mdi:printer-alert"
 
     @property
-    def native_value(self) -> int | None:
-        """Return the state of the sensor."""
-        # Update supply data from coordinator
-        if not self.coordinator.data or "supplies" not in self.coordinator.data:
+    def state(self):
+        # map common Printer-MIB states
+        if self._state is None:
             return None
-
-        for supply in self.coordinator.data["supplies"]:
-            if supply.get("index") == self._supply.get("index"):
-                return supply.get("percentage")
-
-        return None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        if not self.coordinator.data or "supplies" not in self.coordinator.data:
-            return {}
-
-        for supply in self.coordinator.data["supplies"]:
-            if supply.get("index") == self._supply.get("index"):
-                attributes = {
-                    "type": supply.get("type"),
-                    "color": supply.get("color"),
-                    "description": supply.get("description"),
-                }
-
-                # Add offline information if using cached data
-                if not self.is_printer_online:
-                    attributes["using_cached_data"] = True
-                    offline_since = self.coordinator.data.get("offline_since")
-                    if offline_since:
-                        attributes["last_updated"] = offline_since
-
-                # Add RGB color code for UI customization
-                color = supply.get("color", "")
-                if color == "Black":
-                    attributes["rgb_color"] = [0, 0, 0]
-                elif color == "Cyan":
-                    attributes["rgb_color"] = [0, 255, 255]
-                elif color == "Magenta":
-                    attributes["rgb_color"] = [255, 0, 255]
-                elif color == "Yellow":
-                    attributes["rgb_color"] = [255, 255, 0]
-                elif color == "Gray" or color == "Grey":
-                    attributes["rgb_color"] = [128, 128, 128]
-                elif color == "Light Cyan":
-                    attributes["rgb_color"] = [128, 255, 255]
-                elif color == "Light Magenta":
-                    attributes["rgb_color"] = [255, 128, 255]
-                elif color == "Photo":
-                    attributes["rgb_color"] = [128, 128, 255]
-
-                return attributes
-
-        return {}
+        try:
+            s = int(self._state)
+            # typical mapping: 1=other,2=unknown,3=idle,4=printing,5=warmup (varies)
+            if s == 3:
+                return "idle"
+            if s == 4:
+                return "printing"
+            if s == 5:
+                return "warmup"
+            if s == 2:
+                return "unknown"
+            return f"state_{s}"
+        except Exception:
+            return str(self._state)
 
 
-class PrinterTraySensor(PrinterSensorBase):
-    """Representation of a printer tray sensor."""
+class CanonTraySensor(BaseSNMPSensor):
+    """Tray status sensor."""
 
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-        tray: dict[str, Any],
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._tray = tray
-
-        # Extract tray name from description (e.g., "Tray 1", "MP Tray")
-        description = tray.get("description", "")
-        tray_name = description if description else f"Tray {tray.get('index', '')}"
-
-        # Set translation key for standard trays (tray_1, tray_2, etc.)
-        if "Tray" in tray_name and any(char.isdigit() for char in tray_name):
-            # Extract number from tray name
-            tray_num = "".join(filter(str.isdigit, tray_name))
-            if tray_num:
-                self._attr_translation_key = f"tray_{tray_num}"
-        else:
-            # For non-standard trays (e.g., "MP Tray"), use explicit name
-            self._attr_name = tray_name
-
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_tray_{tray.get('index')}"
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_icon = "mdi:tray"
-        self._attr_state_class = SensorStateClass.MEASUREMENT
+    def __init__(self, hass, entry, name, oid, host=None, community=None, port=161):
+        super().__init__(hass, entry, name, oid, host, community, port)
 
     @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added."""
-        # Only enable tray sensors that have valid percentage data
-        # Trays without max_capacity or current_level won't have percentage
-        return self._tray.get("percentage") is not None
+    def icon(self):
+        return "mdi:tray"
 
     @property
-    def native_value(self) -> int | None:
-        """Return the state of the sensor."""
-        # Update tray data from coordinator
-        if not self.coordinator.data or "input_trays" not in self.coordinator.data:
+    def state(self):
+        # Canon may return textual status or numeric code
+        if self._state is None:
             return None
-
-        for tray in self.coordinator.data["input_trays"]:
-            if tray.get("index") == self._tray.get("index"):
-                return tray.get("percentage")
-
-        return None
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes."""
-        if not self.coordinator.data or "input_trays" not in self.coordinator.data:
-            return {}
-
-        for tray in self.coordinator.data["input_trays"]:
-            if tray.get("index") == self._tray.get("index"):
-                attributes = {
-                    "status": tray.get("status"),
-                    "media_name": tray.get("media_name"),
-                    "max_capacity": tray.get("max_capacity"),
-                    "current_level": tray.get("current_level"),
-                }
-
-                # Add offline information if using cached data
-                if not self.is_printer_online:
-                    attributes["using_cached_data"] = True
-                    offline_since = self.coordinator.data.get("offline_since")
-                    if offline_since:
-                        attributes["last_updated"] = offline_since
-
-                return attributes
-
-        return {}
-
-
-class PrinterErrorSensor(PrinterSensorBase):
-    """Representation of a printer error sensor."""
-
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._attr_translation_key = "errors"
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_errors"
-        self._attr_icon = "mdi:alert"
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    @property
-    def native_value(self) -> str:
-        """Return the state of the sensor."""
-        if not self.coordinator.data:
-            return "none"
-
-        errors = self.coordinator.data.get("errors")
-        return errors if errors else "none"
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added."""
-        # Always enable error sensor
-        return True
-
-
-class PrinterDisplayTextSensor(PrinterSensorBase):
-    """Representation of a printer display text sensor."""
-
-    def __init__(
-        self,
-        coordinator: DataUpdateCoordinator,
-        entry: ConfigEntry,
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator, entry)
-        self._attr_translation_key = "display"
-        unique_id = (
-            self.coordinator.data.get("info", {}).get(
-                "serial_number", entry.data[CONF_HOST]
-            )
-            if self.coordinator.data
-            else entry.data[CONF_HOST]
-        )
-        self._attr_unique_id = f"{unique_id}_display"
-        self._attr_icon = "mdi:text-box"
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    @property
-    def native_value(self) -> str:
-        """Return the state of the sensor."""
-        if not self.coordinator.data:
-            return "unknown"
-
-        display_text = self.coordinator.data.get("display_text")
-        return display_text if display_text else "unknown"
-
-    @property
-    def entity_registry_enabled_default(self) -> bool:
-        """Return if the entity should be enabled when first added."""
-        # Disable by default if no display text
-        if not self.coordinator.data:
-            return False
-        display_text = self.coordinator.data.get("display_text")
-        return display_text is not None and display_text != ""
+        try:
+            val = int(self._state)
+            # map common codes (device dependent)
+            # 1 = other, 2 = unknown, 3 = available, 4 = not available, 5 = jammed
+            if val == 3:
+                return "available"
+            if val == 4:
+                return "not_available"
+            if val == 5:
+                return "jammed"
+            return f"code_{val}"
+        except Exception:
+            return str(self._state)
