@@ -38,6 +38,9 @@ OID_DEVICE_DESCRIPTION: Final = "1.3.6.1.2.1.25.3.2.1.3.1"
 OID_DEVICE_STATE: Final = "1.3.6.1.2.1.25.3.2.1.5.1"
 OID_DEVICE_ERRORS: Final = "1.3.6.1.2.1.25.3.2.1.6.1"
 
+# Device status
+OID_DEVICE_STATUS = "1.3.6.1.2.1.25.3.5.1.1.1"
+
 # Network information
 OID_HARDWARE_ADDRESS: Final = "1.3.6.1.2.1.2.2.1.6.1"
 
@@ -49,6 +52,9 @@ OID_PRINTER_ERRORS: Final = "1.3.6.1.2.1.25.3.5.1.2.1"
 OID_SERIAL_NUMBER: Final = "1.3.6.1.2.1.43.5.1.1.17.1"
 OID_PAGE_COUNT: Final = "1.3.6.1.2.1.43.10.2.1.4.1.1"
 OID_MEMORY_SIZE: Final = "1.3.6.1.2.1.25.2.2.0"
+
+# Page counter
+OID_PAGE_COUNT = "1.3.6.1.2.1.43.10.2.1.4.1.1"
 
 # Cover status
 OID_COVER_DESCRIPTION: Final = "1.3.6.1.2.1.43.6.1.1.3"
@@ -63,12 +69,31 @@ OID_MARKER_SUPPLIES_LEVEL: Final = "1.3.6.1.2.1.43.11.1.1.9.1"
 OID_MARKER_SUPPLIES_UNIT: Final = "1.3.6.1.2.1.43.11.1.1.7.1"
 OID_MARKER_COLOR: Final = "1.3.6.1.2.1.43.12.1.1.4.1"
 
+# Toner levels
+OID_TONER_BLACK = "1.3.6.1.2.1.43.11.1.1.9.1.1"
+OID_TONER_CYAN = "1.3.6.1.2.1.43.11.1.1.9.1.2"
+OID_TONER_MAGENTA = "1.3.6.1.2.1.43.11.1.1.9.1.3"
+OID_TONER_YELLOW = "1.3.6.1.2.1.43.11.1.1.9.1.4"
+
+# Toner max capacity
+OID_TONER_BLACK_MAX = "1.3.6.1.2.1.43.11.1.1.8.1.1"
+OID_TONER_CYAN_MAX = "1.3.6.1.2.1.43.11.1.1.8.1.2"
+OID_TONER_MAGENTA_MAX = "1.3.6.1.2.1.43.11.1.1.8.1.3"
+OID_TONER_YELLOW_MAX = "1.3.6.1.2.1.43.11.1.1.8.1.4"
+
+# Waste toner
+OID_WASTE_TONER = "1.3.6.1.2.1.43.11.1.1.9.1.5"
+
 # Input (paper tray) information - Base OIDs for walking
 OID_INPUT_DESCRIPTION: Final = "1.3.6.1.2.1.43.8.2.1.13.1"
 OID_INPUT_MAX_CAPACITY: Final = "1.3.6.1.2.1.43.8.2.1.9.1"
 OID_INPUT_CURRENT_LEVEL: Final = "1.3.6.1.2.1.43.8.2.1.10.1"
 OID_INPUT_STATUS: Final = "1.3.6.1.2.1.43.8.2.1.11.1"
 OID_INPUT_TYPE: Final = "1.3.6.1.2.1.43.8.2.1.2.1"
+
+# Tray status
+OID_TRAY_MP = "1.3.6.1.2.1.43.8.2.1.10.1.1"
+OID_TRAY_1 = "1.3.6.1.2.1.43.8.2.1.10.1.2"
 
 # Console display
 OID_DISPLAY_BUFFER: Final = "1.3.6.1.2.1.43.16.5.1.2"
