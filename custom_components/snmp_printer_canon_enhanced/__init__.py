@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 STORAGE_VERSION = 1
-STORAGE_KEY = "snmp_printer_cached_data"
+STORAGE_KEY = "snmp_printer_canon_enhanced_cached_data"
 
 
 async def check_web_interface(host: str, hass: HomeAssistant) -> bool:
@@ -155,7 +155,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name=f"snmp_printer_{entry.data[CONF_HOST]}",
+        name=f"snmp_printer_canon_enhanced_{entry.data[CONF_HOST]}",
         update_method=async_update_data,
         update_interval=timedelta(seconds=update_interval),
     )
