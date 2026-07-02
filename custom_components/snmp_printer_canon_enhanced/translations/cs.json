@@ -2,108 +2,70 @@
   "config": {
     "flow_title": "{name}",
     "step": {
-      "user": {
-        "title": "Nastavení SNMP tiskárny",
-        "description": "Nastavte vaší SNMP tiskárnu"
+      "manual": {
+        "title": "Nastavení tiskárny Canon",
+        "description": "Nakonfigurujte vaši tiskárnu Canon MF754cdw pomocí SNMP",
+        "data": {
+          "host": "IP adresa",
+          "port": "Port",
+          "community": "Community string",
+          "update_interval": "Interval obnovy (sekundy)"
+        }
       },
       "zeroconf_confirm": {
-        "title": "Nalezená SNMP Tiskárna",
-        "description": "Chcete přidat tuto tiskárnu?\n\n**Model:** {model}\n**Výrobce:** {manufacturer}\n**IP Adresa:** {host}"
-      },
-      "manual": {
-        "title": "Nastavte SNMP Tiskárnu",
-        "description": "Vložte detaily vaší SNMP tiskárny",
-        "data": {
-          "host": "IP Adresa",
-          "port": "Port",
-          "snmp_version": "Verze SNMP",
-          "community": "Název komunity",
-          "username": "Uživatelské jméno",
-          "auth_protocol": "Autentizační protokol",
-          "auth_key": "Autentizační klíč",
-          "priv_protocol": "Šifrovací protokol",
-          "priv_key": "Šifrovací klíč",
-          "update_interval": "Interval obnovy (sekund)"
-        }
+        "title": "Nalezena tiskárna Canon",
+        "description": "Na síti byla nalezena tiskárna Canon.\n\n**Model:** {model}\n**Výrobce:** {manufacturer}\n**IP adresa:** {host}"
       }
     },
     "error": {
-      "cannot_connect": "Selhalo připojení k tiskárně. Zkontrolujte svoje nastavení a povolení SNMP v tiskárně.",
+      "cannot_connect": "Nepodařilo se připojit k tiskárně Canon. Zkontrolujte nastavení a zda je SNMP povoleno.",
       "unknown": "Nastala neočekávaná chyba"
     },
     "abort": {
-      "already_configured": "Tato tiskárna je již nastavená",
-      "not_printer": "Nalezené zařízení není SNMP tiskárna"
+      "already_configured": "Tato tiskárna je již nakonfigurována",
+      "not_printer": "Nalezené zařízení není tiskárna Canon"
     }
   },
+
   "options": {
     "step": {
       "init": {
-        "title": "Změna nastavení SNMP tiskárny",
-        "description": "Změňte nastavení této SNMP tiskárny",
+        "title": "Změna nastavení tiskárny Canon",
+        "description": "Upravte konfiguraci této tiskárny Canon",
         "data": {
-          "community": "Název komunity",
-          "username": "Uživatelské jméno",
-          "auth_protocol": "Autentizační protokol",
-          "auth_key": "Autentizační klíč",
-          "priv_protocol": "Šifrovací protokol",
-          "priv_key": "Šifrovací klíč",
-          "update_interval": "Interval obnovy (sekund)"
+          "host": "IP adresa",
+          "port": "Port",
+          "community": "Community string",
+          "update_interval": "Interval obnovy (sekundy)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Selhalo připojení k tiskárně. Zkontrolujte svoje změny v nastavení."
+      "cannot_connect": "Nepodařilo se připojit s novým nastavením. Zkontrolujte konfiguraci."
     }
   },
+
   "entity": {
     "sensor": {
       "status": {
         "name": "Stav",
         "state": {
-          "idle": "V klidu",
-          "printing": "Tiskne",
-          "warming_up": "Nahřívá se",
-          "offline": "Odpojená (zapamatované informace)",
+          "running": "Běží",
+          "warning": "Varování",
+          "down": "Nefunkční",
+          "offline": "Offline (použita cache)",
           "unknown": "Neznámý"
         }
       },
+
       "page_count": {
         "name": "Počet stran"
       },
-      "cover_status": {
-        "name": "Stav víka"
-      },
+
       "errors": {
-        "name": "Chyby"
+        "name": "Upozornění tiskárny"
       },
-      "display": {
-        "name": "Displej"
-      },
-      "black": {
-        "name": "Černá"
-      },
-      "cyan": {
-        "name": "Azurová"
-      },
-      "magenta": {
-        "name": "Purpurová"
-      },
-      "yellow": {
-        "name": "Žlutá"
-      },
-      "light_cyan": {
-        "name": "Světlá azurová"
-      },
-      "light_magenta": {
-        "name": "Světlá purpurová"
-      },
-      "photo": {
-        "name": "Foto"
-      },
-      "gray": {
-        "name": "Šedá"
-      },
+
       "tray_1": {
         "name": "Zásobník 1"
       },
@@ -115,22 +77,6 @@
       },
       "tray_4": {
         "name": "Zásobník 4"
-      }
-    }
-  },
-  "services": {
-    "display_text": {
-      "name": "Zobrazit text",
-      "description": "Zobrazí text na displeji tiskárny (pokud to podporuje)",
-      "fields": {
-        "device_id": {
-          "name": "Zařízení",
-          "description": "Vybraná tiskárna"
-        },
-        "text": {
-          "name": "Text",
-          "description": "Text ke zobrazení na tiskárně"
-        }
       }
     }
   }
