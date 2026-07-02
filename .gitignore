@@ -1,9 +1,11 @@
-# Ignore Python cache files
+# Python cache
 __pycache__/
 *.py[cod]
+*.pyc
 *$py.class
 *.so
 .Python
+__pypackages__/
 
 # Virtual environments
 .venv/
@@ -27,7 +29,7 @@ Thumbs.db
 .coverage
 htmlcov/
 
-# Distribution
+# Distribution / packaging
 dist/
 build/
 *.egg-info/
