@@ -1,6 +1,8 @@
 {
   "name": "SNMP Printer Canon Enhanced",
   "hacs": "1.6.0",
-  "homeassistant": "2023.9.0",
-  "render_readme": true
+  "homeassistant": "2024.12.0",
+  "render_readme": true,
+  "domains": ["sensor"],
+  "iot_class": "local_polling"
 }
