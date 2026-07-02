@@ -5,37 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-10-14
+# Changelog – SNMP Printer Canon Enhanced
 
-### Added
-- Cached values feature: Integration now remembers last known sensor values when printer is offline (Issue #3)
-- Offline status indication in sensor attributes with timestamp of last successful data fetch
-- Status sensor now shows "offline" state when using cached data
+## 1.2.0 – Canon MF754cdw Special Edition
+### Kompletní refaktorizace komponenty
+- Komponenta je nyní plně specializovaná pro tiskárny **Canon MF754cdw / MF750C Series**.
+- Odstraněna podpora generických SNMP tiskáren (HP, Epson, Brother, Lexmark, Samsung…).
+- Odstraněna podpora SNMPv3 – bude doplněno v některé z dalších verzí.
 
-### Fixed
-- Reduced excessive SNMP error logging when printer is offline (Issue #6)
-- SNMP errors now log once as ERROR, then at WARNING level every 5 minutes to prevent log spam
-- Connection recovery is properly logged when printer comes back online
+### Nový SNMP klient (pysnmp‑lextudio)
+- Přechod na knihovnu **pysnmp‑lextudio 6.0.11** kompatibilní s Home Assistant Core 2024+.
+- Kompletně přepsaná komunikace přes SNMP (GET, WALK).
+- Používány pouze ověřené Canon OID:
+  - systémové informace (sysDescr, sysName, sysLocation…)
+  - stav zařízení (hrDeviceStatus)
+  - upozornění tiskárny (prtAlertDescription)
+  - počítadla stran (total / color / mono)
+  - zásobníky papíru
+  - spotřební materiál (toner, waste toner, drum)
 
-## [1.0.0] - 2025-10-01
+### Nové datové struktury
+- `page_counts` → total, color, mono
+- `supplies` → description, level, max_capacity, percentage
+- `input_trays` → description, level, max_capacity, percentage
+- `errors` → Canon alert description
 
-### Added
-- Initial release
-- SNMP v1, v2c, and v3 support
-- Automatic printer discovery via Zeroconf/mDNS (a bit slow due to pulling snmp values but works)
-- Manual printer configuration
-- Support for major printer brands (Brother, Canon, HP, Konica Minolta, Kyocera, Lexmark, OKI, Panasonic, Ricoh, Samsung, Sharp, Xerox)
-- Support for MIB and MIBII
-- Wide sensor coverage:
-  - Printer status sensor with attributes
-  - Cover status sensor
-  - Total pages sensor with color/BW breakdown
-  - Toner/ink level sensors
-  - Paper tray sensors
-  - Waste container sensor
-  - Drum unit sensors
-  - Other consumable sensors
-- Device information display (manufacturer, serial number, MAC address)
-- Automatic web interface link detection (check if web gui reachable)
-- Display text service for printer displays (make amazing automations!)
-- Localization support
+### Odstraněné nepodporované funkce
+- `cover_status` (Canon SNMP neobsahuje)
+- `display_text` (Canon SNMP neobsahuje)
+- SNMP SET operace (Canon nepodporuje)
+- Služba `display_text` byla odstraněna včetně `services.yaml`
+
+### Nové senzory
+- Stav tiskárny (running / warning / down / offline / unknown)
+- Počet stran (total, color, mono)
+- Upozornění tiskárny (Canon alerts)
+- Zásobníky papíru (Tray 1–4)
+- Spotřební materiál (toner, waste toner, drum)
+
+### Nové jazykové soubory
+- Aktualizované `en.json` a `cs.json` podle Canon‑specializované verze.
+- Odstraněny nepoužívané překlady (barvy tonerů, cover, display, SNMPv3).
+
+### Nový config flow
+- Zjednodušený pouze na SNMPv2c.
+- Automatická detekce Canon tiskárny přes Zeroconf.
+- Zobrazení modelu a výrobce z Canon sysDescr.
+
+### Nový manifest
+- `requirements`: pysnmp-lextudio==6.0.11
+- `domain`: snmp_printer_canon_enhanced
+- `config_flow`: true
+- `iot_class`: local_polling
+- Odstraněny nepotřebné položky.
+
+### Další změny
+- Vyčištění celé codebase.
+- Zjednodušení struktury komponenty.
+- Zrychlení SNMP dotazů.
+- Stabilnější chování při výpadku tiskárny.
