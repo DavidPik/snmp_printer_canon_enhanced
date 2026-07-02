@@ -1,194 +1,187 @@
-![maintained](https://img.shields.io/maintenance/yes/2025.svg)
-[![hacs_badge](https://img.shields.io/badge/hacs-default-green.svg)](https://github.com/custom-components/hacs)
-[![ha_version](https://img.shields.io/badge/home%20assistant-2024.10%2B-green.svg)](https://www.home-assistant.io)
-![version](https://img.shields.io/badge/version-1.1.0-green.svg)
+# SNMP Printer Canon Enhanced  
+Home Assistant integration for **Canon MF754cdw / MF750C Series** printers using SNMP v2c.
+
+![maintenance](https://img.shields.io/maintenance/yes/2026.svg)
+![hacs](https://img.shields.io/badge/hacs-default-green.svg)
+![ha_version](https://img.shields.io/badge/home%20assistant-2024.10%2B-green.svg)
+![version](https://img.shields.io/badge/version-1.2.0-green.svg)
 ![stability](https://img.shields.io/badge/stability-stable-green.svg)
-[![CI](https://github.com/DSorlov/snmp_printer/workflows/CI/badge.svg)](https://github.com/DSorlov/snmp_printer/actions/workflows/ci.yaml)
-[![hassfest](https://github.com/DSorlov/snmp_printer/workflows/Validate%20with%20hassfest/badge.svg)](https://github.com/DSorlov/snmp_printer/actions/workflows/hassfest.yaml)
-[![HACS](https://github.com/DSorlov/snmp_printer/workflows/HACS%20Validation/badge.svg)](https://github.com/DSorlov/snmp_printer/actions/workflows/hacs.yaml)
-[![maintainer](https://img.shields.io/badge/maintainer-dsorlov-blue.svg)](https://github.com/DSorlov)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![license](https://img.shields.io/badge/License-MIT-blue.svg)
 
-# SNMP Printer Integration for Home Assistant
+---
 
-Are you tired of different printers and different integrations? I was, this is a one-to-rule-them-all integration for getting status about your printers. This integration supports automatic discovery and manual configuration of printers, providing detailed status information, supply levels, and automation capabilities.
+## 📌 About This Integration
 
-## Features
+This is a **specialized SNMP integration for Canon MF754cdw / MF750C Series printers**.  
+It is **not a generic SNMP printer integration** — all logic, OIDs, sensors and flows are optimized specifically for Canon MF7xx devices.
 
-- :mag: **Automatic Discovery**: Automatically discovers SNMP-enabled printers via Zeroconf/mDNS
-- :printer: **Wide Printer Support**: Compatible with Brother, Canon, HP, Konica Minolta, Kyocera, Lexmark, OKI, Panasonic, Ricoh, Samsung, Sharp, and Xerox printers
-- :bar_chart: **Monitoring**: Track printer status, toner levels, paper trays, drums, and more
-- :wrench: **SNMP Version Configuration**: Support for SNMP v1, v2c, and v3
-- :floppy_disk: **Cached Values**: Remembers last known sensor values when printer is offline, so you can check toner levels without turning on the printer
-- :robot: **Automation Ready**: Trigger automations based on printer events
+The integration provides:
 
-## Supported Sensors
+- Reliable SNMP v2c communication using `pysnmp-lextudio`
+- Accurate Canon‑specific page counters (total / color / mono)
+- Canon alert messages (prtAlertDescription)
+- Supply levels (toner, waste toner, drum)
+- Paper tray status (Tray 1–4)
+- Automatic Zeroconf discovery of Canon printers
+- Cached values when the printer is offline
+- Clean and simple configuration flow
 
-For each configured printer, the integration creates:
+---
 
-- **Status Sensor**: Current printer status (ready, jammed, etc.) with uptime, memory, page count, and other attributes
-- **Cover Status Sensor**: Current cover/door status
-- **Total Pages Sensor**: Total pages printed (with color and B&W breakdown)
-- **Toner/Ink Sensors**: Individual sensors for each toner cartridge showing remaining level
-- **Paper Tray Sensors**: Status and capacity for each paper tray
-- **Waste Container Sensor**: Waste toner box fill level
-- **Drum Unit Sensors**: Remaining life for drum units
-- **Other Consumables**: Belt units, finishers, etc.
+## 🖨 Supported Devices
 
-## Installation
+| Model | Status |
+|-------|--------|
+| **Canon MF754cdw** | ✔ Fully supported |
+| **Canon MF750C Series** | ✔ Fully supported |
+| Other Canon models | ❓ Not tested |
+| HP / Epson / Brother / Lexmark / Samsung | ❌ Not supported |
+| SNMPv3 printers | ❌ Not supported |
 
-### HACS (Recommended)
+This integration is intentionally **Canon‑only** for maximum reliability.
 
-1. Open HACS in Home Assistant
-2. Go to "Integrations"
-3. Click the "+" button
-4. Search for "SNMP Printer"
+---
+
+## 🚀 Features
+
+### ✔ Canon‑specific SNMP monitoring
+- Printer status (running / warning / down / offline)
+- Page counters (total, color, mono)
+- Canon alert messages
+- Supply levels:
+  - Black toner
+  - Cyan toner
+  - Magenta toner
+  - Yellow toner
+  - Waste toner
+  - Drum life
+- Paper trays:
+  - Tray 1
+  - Tray 2
+  - Tray 3
+  - Tray 4
+
+### ✔ Automatic discovery
+The integration detects Canon printers via Zeroconf/mDNS.
+
+### ✔ Cached values
+If the printer is offline, the integration continues to show the last known values.
+
+### ✔ Clean configuration
+Only SNMP v2c is used — no SNMPv3 complexity.
+
+---
+
+## 📦 Installation
+
+### 🔹 HACS (Recommended)
+1. Open **HACS → Integrations**
+2. Click **Custom repositories**
+3. Add repository:  
+   `https://github.com/DavidPik/snmp_printer_canon_enhanced`
+4. Category: **Integration**
 5. Install the integration
 6. Restart Home Assistant
 
-### Manual Installation
+### 🔹 Manual Installation
+Copy the folder: custom_components/snmp_printer_canon_enhanced into: config/custom_components/
 
-1. Download the latest release from [GitHub](https://github.com/dsorlov/snmp_printer/releases)
-2. Extract the `custom_components/snmp_printer` folder to your Home Assistant's `custom_components` directory
-3. Restart Home Assistant
 
-## Configuration
+Restart Home Assistant.
 
-### Via UI (Recommended)
+---
 
-1. Go to **Settings** → **Devices & Services**
-2. Click **Add Integration**
-3. Search for "SNMP Printer"
-4. Follow the configuration steps:
-   - **Automatic Discovery**: If Home Assistant discovered a printer, you'll see a notification - click Configure to set it up
-   - **Manual Configuration**: Enter printer details manually if not discovered
+## ⚙️ Configuration
 
-#### Configuration Options
+### Automatic Discovery
+If your Canon printer broadcasts via Zeroconf, Home Assistant will show a discovery card.
 
-- **IP Address**: Printer's IP address
-- **Port**: SNMP port (default: 161)
-- **SNMP Version**: v1, v2c, or v3
-- **Community String**: SNMP community name (default: public)
-- **Update Interval**: How often to poll the printer (default: 60 seconds)
+Click **Configure** → Confirm → Done.
 
-### SNMP v3 Configuration
+### Manual Configuration
+Go to:
 
-For SNMP v3, additional security parameters are required:
+**Settings → Devices & Services → Add Integration → SNMP Printer Canon Enhanced**
 
-- **Username**: SNMP v3 username
-- **Auth Protocol**: Authentication protocol (MD5 or SHA)
-- **Auth Key**: Authentication password
-- **Privacy Protocol**: Privacy protocol (DES or AES)
-- **Privacy Key**: Privacy password
+You will be asked for:
 
-## Usage
+| Field | Description |
+|-------|-------------|
+| **IP Address** | Printer IP (e.g., 192.168.1.50) |
+| **Port** | SNMP port (default: 161) |
+| **Community** | SNMP community (default: `public`) |
+| **Update Interval** | Polling interval in seconds |
 
-### Monitoring
+SNMP Version is fixed to **v2c**.
 
-Once configured, the integration will create a device for your printer with all available sensors. View the device page to see:
+---
 
-- Manufacturer and model information
-- Serial number
-- Hardware (MAC) address
-- Link to printer's web interface (if available)
-- All sensor readings
+## 📊 Sensors Created
 
-### Automations
+### Printer Status
+- running  
+- warning  
+- down  
+- offline  
+- unknown  
 
-Create automations based on printer events:
+### Page Counts
+- total pages  
+- color pages  
+- mono pages  
 
-```yaml
-automation:
-  - alias: "Low Toner Alert"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.office_printer_black_toner
-        below: 20
-    action:
-      - service: notify.mobile_app
-        data:
-          message: "Office printer black toner is low!"
+### Alerts
+- Canon alert description (prtAlertDescription)
 
-  - alias: "Paper Jam Notification"
-    trigger:
-      - platform: state
-        entity_id: sensor.office_printer_status
-        to: "jammed"
-    action:
-      - service: notify.mobile_app
-        data:
-          message: "Office printer has a paper jam!"
-```
+### Supplies
+- Toner (Black, Cyan, Magenta, Yellow)
+- Waste toner
+- Drum life
 
-## Troubleshooting
+### Paper Trays
+- Tray 1
+- Tray 2
+- Tray 3
+- Tray 4
 
-### Printer Not Discovered
+---
 
-If your printer is not discovered automatically:
+## 🔧 Troubleshooting
 
-1. Ensure the printer is powered on and connected to the network
-2. Verify SNMP is enabled on the printer
-3. Check that your printer advertises itself via mDNS/Zeroconf (most network printers do)
-4. Try manual configuration instead with the printer's IP address
+### Printer shows “offline”
+- Check SNMP is enabled in the printer web interface  
+- Check firewall rules  
+- Check correct IP address  
+- Check community string (`public` by default)
 
-### No Data or Sensors Unavailable
+### Some sensors show “unknown”
+Canon printers sometimes return empty SNMP values when waking from sleep.  
+Values will update automatically on next polling cycle.
 
-- Verify the SNMP community string is correct
-- Ensure SNMP version matches printer configuration
-- Check printer supports standard Printer MIB (RFC 3805)
-- Some printers may not support all sensors
+### Zeroconf discovery does not work
+You can always configure the printer manually.
 
-### SNMP v3 Issues
+---
 
-- Verify username and passwords are correct
-- Ensure auth and privacy protocols match printer configuration
-- Some older printers may not fully support SNMP v3
+## 📝 Changelog
 
-## Localization
+See:  
+[CHANGELOG.md](CHANGELOG.md)
 
-I have tried to use machine translation to create a few useable translations. Please correct me if there are any major wrongs or you are missing some languages:
+---
 
-- :uk: English (en.json) - English
-- :sweden: Swedish (sv.json) - Svenska
-- :denmark: Danish (da.json) - Dansk
-- :norway: Norwegian (no.json) - Norsk
-- :finland: Finnish (fi.json) - Suomi
-- :de: German (de.json) - Deutsch
-- :netherlands: Dutch (nl.json) - Nederlands
-- :es: Spanish (es.json) - Español
-- :fr: French (fr.json) - Français
+## 📄 License
 
-## Supported Printers
+MIT License  
+© 2026 DavidPik
 
-This integration uses standard Printer MIB (RFC 3805) and should work with most network printers from:
+---
 
-- Brother
-- Canon
-- HP
-- Konica Minolta
-- Kyocera
-- Lexmark
-- OKI
-- Panasonic
-- Ricoh
-- Samsung
-- Sharp
-- Xerox
+## 🤝 Contributing
 
-## Contributing
+Pull requests are welcome.  
+If you encounter issues, please report them here:
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+https://github.com/DavidPik/snmp_printer_canon_enhanced/issues
 
-## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-- :bug: [Report a Bug](https://github.com/dsorlov/snmp_printer/issues)
-- :bulb: [Request a Feature](https://github.com/dsorlov/snmp_printer/issues)
-- :book: [Documentation](https://github.com/dsorlov/snmp_printer)
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
