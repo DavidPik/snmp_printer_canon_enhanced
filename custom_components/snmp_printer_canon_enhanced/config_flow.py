@@ -38,13 +38,17 @@ class SNMPPrinterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     #
     # USER STEP → always manual, Canon MF754cdw does not require auto-detection
     #
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         return await self.async_step_manual(user_input)
 
     #
     # MANUAL CONFIGURATION
     #
-    async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_manual(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         errors = {}
 
         if user_input is not None:
@@ -77,7 +81,9 @@ class SNMPPrinterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_HOST: user_input[CONF_HOST],
                         CONF_PORT: user_input.get(CONF_PORT, DEFAULT_PORT),
                         CONF_SNMP_VERSION: "2c",
-                        CONF_COMMUNITY: user_input.get(CONF_COMMUNITY, DEFAULT_COMMUNITY),
+                        CONF_COMMUNITY: user_input.get(
+                            CONF_COMMUNITY, DEFAULT_COMMUNITY
+                        ),
                         CONF_UPDATE_INTERVAL: user_input.get(
                             CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
                         ),
@@ -96,17 +102,27 @@ class SNMPPrinterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): str,
                 vol.Optional(
                     CONF_PORT,
-                    default=user_input.get(CONF_PORT, DEFAULT_PORT) if user_input else DEFAULT_PORT,
+                    default=(
+                        user_input.get(CONF_PORT, DEFAULT_PORT)
+                        if user_input
+                        else DEFAULT_PORT
+                    ),
                 ): int,
                 vol.Optional(
                     CONF_COMMUNITY,
-                    default=user_input.get(CONF_COMMUNITY, DEFAULT_COMMUNITY) if user_input else DEFAULT_COMMUNITY,
+                    default=(
+                        user_input.get(CONF_COMMUNITY, DEFAULT_COMMUNITY)
+                        if user_input
+                        else DEFAULT_COMMUNITY
+                    ),
                 ): str,
                 vol.Optional(
                     CONF_UPDATE_INTERVAL,
-                    default=user_input.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
-                    if user_input
-                    else DEFAULT_UPDATE_INTERVAL,
+                    default=(
+                        user_input.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
+                        if user_input
+                        else DEFAULT_UPDATE_INTERVAL
+                    ),
                 ): int,
             }
         )
@@ -120,7 +136,9 @@ class SNMPPrinterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     #
     # ZEROCONF DISCOVERY
     #
-    async def async_step_zeroconf(self, discovery_info: ZeroconfServiceInfo) -> FlowResult:
+    async def async_step_zeroconf(
+        self, discovery_info: ZeroconfServiceInfo
+    ) -> FlowResult:
         host = discovery_info.host
         if not host:
             return self.async_abort(reason="unknown")
@@ -218,23 +236,34 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_HOST, default=self.config_entry.data.get(CONF_HOST)): str,
-                vol.Optional(CONF_PORT, default=self.config_entry.data.get(CONF_PORT, DEFAULT_PORT)): int,
+                vol.Required(
+                    CONF_HOST, default=self.config_entry.data.get(CONF_HOST)
+                ): str,
+                vol.Optional(
+                    CONF_PORT,
+                    default=self.config_entry.data.get(CONF_PORT, DEFAULT_PORT),
+                ): int,
                 vol.Optional(
                     CONF_COMMUNITY,
-                    default=self.config_entry.data.get(CONF_COMMUNITY, DEFAULT_COMMUNITY),
+                    default=self.config_entry.data.get(
+                        CONF_COMMUNITY, DEFAULT_COMMUNITY
+                    ),
                 ): str,
                 vol.Optional(
                     CONF_UPDATE_INTERVAL,
                     default=self.config_entry.options.get(
                         CONF_UPDATE_INTERVAL,
-                        self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
+                        self.config_entry.data.get(
+                            CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
+                        ),
                     ),
                 ): int,
             }
         )
 
-        return self.async_show_form(step_id="init", data_schema=data_schema, errors=errors)
+        return self.async_show_form(
+            step_id="init", data_schema=data_schema, errors=errors
+        )
 
     async def async_step_complete(self, user_input=None):
         errors = {}

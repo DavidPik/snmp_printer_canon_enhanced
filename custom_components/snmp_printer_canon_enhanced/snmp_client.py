@@ -29,30 +29,24 @@ CANON_OID = {
     "sysLocation": "1.3.6.1.2.1.1.6.0",
     "sysContact": "1.3.6.1.2.1.1.4.0",
     "sysUptime": "1.3.6.1.2.1.1.3.0",
-
     # Device info
     "serialNumber": "1.3.6.1.2.1.43.5.1.1.17.1",
     "macAddress": "1.3.6.1.2.1.2.2.1.6.1",
-
     # Printer status (hrDeviceStatus)
     # 1=unknown, 2=running, 3=warning, 4=testing, 5=down
     "deviceStatus": "1.3.6.1.2.1.25.3.2.1.5.1",
-
     # Printer alerts (prtAlertDescription)
     "alertDescription": "1.3.6.1.2.1.43.18.1.1.8.1.1",
-
     # Page counts (Canon MF754cdw)
     "pageTotal": "1.3.6.1.2.1.43.10.2.1.4.1.1",
     "pageColor": "1.3.6.1.2.1.43.10.2.1.5.1.1",
     "pageMono": "1.3.6.1.2.1.43.10.2.1.6.1.1",
-
     # Supplies (standard Printer-MIB)
     "supplyDescription": "1.3.6.1.2.1.43.11.1.1.6.1",
     "supplyLevel": "1.3.6.1.2.1.43.11.1.1.9.1",
     "supplyMax": "1.3.6.1.2.1.43.11.1.1.8.1",
     "supplyClass": "1.3.6.1.2.1.43.11.1.1.5.1",
     "supplyType": "1.3.6.1.2.1.43.11.1.1.4.1",
-
     # Input trays
     "trayDescription": "1.3.6.1.2.1.43.8.2.1.18.1",
     "trayMaxCapacity": "1.3.6.1.2.1.43.8.2.1.9.1",

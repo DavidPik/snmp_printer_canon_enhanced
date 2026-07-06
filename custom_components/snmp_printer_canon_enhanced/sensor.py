@@ -279,6 +279,7 @@ class PrinterTraySensor(PrinterSensorBase):
 # Additional Canon MF754cdw sensors
 #
 
+
 class PrinterWasteTonerSensor(PrinterSensorBase):
     """Waste toner level."""
 
