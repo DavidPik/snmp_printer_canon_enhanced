@@ -7,7 +7,7 @@
   "documentation": "https://github.com/DavidPik/snmp_printer_canon_enhanced",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/DavidPik/snmp_printer_canon_enhanced/issues",
-  "requirements": ["pysnmp-lextudio==6.0.11"],
+  "requirements": ["pysnmp-lextudio"],
   "version": "1.2.0",
   "zeroconf": [
     "_printer._tcp.local.",
