@@ -14,9 +14,9 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
-    DOMAIN,
     CONF_UPDATE_INTERVAL,
     DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
 )
 from .snmp_client import SNMPClient
 
