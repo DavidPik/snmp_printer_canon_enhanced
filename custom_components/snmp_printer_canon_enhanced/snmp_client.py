@@ -7,15 +7,15 @@ import time
 from typing import Any
 
 from pysnmp_lextudio.hlapi.asyncio import (
-    SnmpEngine,
     CommunityData,
-    UsmUserData,
-    UdpTransportTarget,
     ContextData,
-    ObjectType,
     ObjectIdentity,
-    getCmd,
+    ObjectType,
+    SnmpEngine,
+    UdpTransportTarget,
+    UsmUserData,
     bulkCmd,
+    getCmd,
 )
 from pysnmp_lextudio.proto.rfc1902 import OctetString
 
