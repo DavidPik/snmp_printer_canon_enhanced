@@ -17,7 +17,6 @@ from pysnmp_lextudio.hlapi.asyncio import (
     bulkCmd,
     getCmd,
 )
-from pysnmp_lextudio.proto.rfc1902 import OctetString
 
 _LOGGER = logging.getLogger(__name__)
 
