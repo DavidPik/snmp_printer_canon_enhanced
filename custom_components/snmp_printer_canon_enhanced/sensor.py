@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -95,7 +94,7 @@ class PrinterSensorBase(CoordinatorEntity, SensorEntity):
 
         device_info = DeviceInfo(
             identifiers={(DOMAIN, unique_id)},
-            name=model,
+            name=description,
             manufacturer=manufacturer,
             model=model,
         )
