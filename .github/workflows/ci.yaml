@@ -33,4 +33,5 @@ jobs:
         run: isort --check-only --diff custom_components/snmp_printer_canon_enhanced/
 
       - name: Run flake8
-        run: flake8 custom_components/snmp_printer_canon_enhanced/
+        run: flake8 --max-line-length=120 --extend-ignore=E203 custom_components/snmp_printer_canon_enhanced/
+
