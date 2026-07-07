@@ -1,1 +1,1 @@
-pysnmp-lextudio==6.0.11
+pysnmp-lextudio==6.3.0
