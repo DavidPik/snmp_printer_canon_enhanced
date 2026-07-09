@@ -28,7 +28,7 @@ jobs:
           awk '/^##/{flag=1} flag' CHANGELOG.md >> RELEASE_NOTES.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: "SNMP Printer Canon Enhanced ${{ steps.version.outputs.VERSION }}"
